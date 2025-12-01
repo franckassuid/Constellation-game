@@ -116,18 +116,18 @@ export function Game() {
             setTutorialStep(3);
         }
 
-        // Step 3: Waiting for 3 Lines (Triangle)
-        if (tutorialStep === 3 && lines.length >= 3) {
+        // Step 3: Waiting for Triangle (Advance when triangles count increases)
+        if (tutorialStep === 3 && triangles.length > 0) {
             setTutorialStep(4);
         }
-    }, [phase, lines.length, showTutorial, tutorialStep]);
+    }, [phase, lines.length, triangles.length, showTutorial, tutorialStep]);
 
     const rollDice = () => {
         if (isRolling) return;
         setIsRolling(true);
 
         // Tutorial Script: Always roll a 3
-        const newValue = showTutorial ? 3 : Math.floor(Math.random() * 6) + 1;
+        const targetValue = showTutorial ? 3 : Math.floor(Math.random() * 6) + 1;
 
         let counter = 0;
         const interval = setInterval(() => {
@@ -135,8 +135,8 @@ export function Game() {
             counter++;
             if (counter > 10) {
                 clearInterval(interval);
-                setDiceValue(newValue);
-                setMovesLeft(newValue);
+                setDiceValue(targetValue);
+                setMovesLeft(targetValue);
                 setPhase('playing');
                 setIsRolling(false);
             }
@@ -145,6 +145,19 @@ export function Game() {
 
     const handleLineDraw = (p1, p2) => {
         if (movesLeft <= 0) return;
+
+        // Tutorial Strict Enforcement
+        if (showTutorial) {
+            // We want to force a triangle between the first 3 points (indices 0, 1, 2)
+            // Assuming points are generated in a stable way or we just pick the first 3 available.
+            // Let's use the IDs of the first 3 points in the `points` array.
+            const validIds = [points[0].id, points[1].id, points[2].id];
+
+            // Check if both points are in our valid set
+            if (!validIds.includes(p1.id) || !validIds.includes(p2.id)) {
+                return; // Block invalid moves
+            }
+        }
 
         if (lines.some(l => (l.p1.id === p1.id && l.p2.id === p2.id) || (l.p1.id === p2.id && l.p2.id === p1.id))) {
             return;
@@ -226,9 +239,9 @@ export function Game() {
         <div className="game-container">
             {/* Header */}
             <div className="header">
-                <div className={`player-score ${currentPlayer !== 1 ? 'inactive' : ''}`}>
-                    <div className="player-label">Player 1</div>
-                    <div className="score-value p1">{scores[1]}</div>
+                <div className={`player-score flex flex-col items-center ${currentPlayer !== 1 ? 'inactive opacity-50' : ''}`}>
+                    <div className="player-label text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Player 1</div>
+                    <div key={scores[1]} className={`score-value p1 text-4xl font-black text-blue-400 ${scores[1] > 0 ? 'score-animate' : ''}`}>{scores[1]}</div>
                 </div>
 
                 <div className="game-title">
@@ -242,9 +255,9 @@ export function Game() {
                     </button>
                 </div>
 
-                <div className={`player-score ${currentPlayer !== 2 ? 'inactive' : ''}`}>
-                    <div className="player-label">Player 2</div>
-                    <div className="score-value p2">{scores[2]}</div>
+                <div className={`player-score flex flex-col items-center ${currentPlayer !== 2 ? 'inactive opacity-50' : ''}`}>
+                    <div className="player-label text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Player 2</div>
+                    <div key={scores[2]} className={`score-value p2 text-4xl font-black text-rose-400 ${scores[2] > 0 ? 'score-animate' : ''}`}>{scores[2]}</div>
                 </div>
             </div>
 
@@ -283,6 +296,16 @@ export function Game() {
                             <div className="flex justify-between items-center w-full">
                                 <span>Long Game</span>
                                 <span className="text-xs bg-purple-500/20 px-2 py-1 rounded-full border border-purple-500/30">35 Stars</span>
+                            </div>
+                        </button>
+
+                        <button
+                            onClick={replayTutorial}
+                            className="menu-btn bg-slate-700/30 border-slate-600/50 hover:bg-slate-700/50 text-slate-300 mt-4"
+                        >
+                            <div className="flex justify-center items-center w-full gap-2">
+                                <HelpCircle size={16} />
+                                <span>View Tutorial</span>
                             </div>
                         </button>
                     </div>
@@ -389,7 +412,7 @@ export function Game() {
                     )}
 
                     {tutorialStep === 1 && (
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-70 tutorial-tooltip right" style={{ marginLeft: '180px', marginTop: '-60px' }}>
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-70 tutorial-tooltip right" style={{ marginLeft: '220px', marginTop: '-60px' }}>
                             <h4 className="font-bold text-blue-400 mb-1">Step 1: Choose Mode</h4>
                             <p className="text-sm">Select a game duration to start.</p>
                             <div className="mt-2 text-xs text-slate-400 animate-pulse">Waiting for selection...</div>
@@ -405,11 +428,14 @@ export function Game() {
                     )}
 
                     {tutorialStep === 3 && (
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-70 tutorial-tooltip pointer-events-none">
-                            <h4 className="font-bold text-blue-400 mb-1">Step 3: You have {moves} Moves</h4>
-                            <p className="text-sm">Draw <strong>3 lines</strong> to form a triangle and score points!</p>
-                            <div className="mt-2 text-xs text-slate-400 animate-pulse">Lines drawn: {lines.length}/3</div>
-                        </div>
+                        <>
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-70 tutorial-tooltip pointer-events-none">
+                                <h4 className="font-bold text-blue-400 mb-1">Step 3: You have {movesLeft} Moves</h4>
+                                <p className="text-sm">Draw <strong>3 lines</strong> to form a triangle and score points!</p>
+                                <div className="mt-2 text-xs text-slate-400 animate-pulse">Triangles formed: {triangles.length}</div>
+                            </div>
+                            <div className="gesture-hand"></div>
+                        </>
                     )}
 
                     {tutorialStep === 4 && (
