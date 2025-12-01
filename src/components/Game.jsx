@@ -93,14 +93,19 @@ export function Game() {
     useEffect(() => {
         if (!showTutorial) return;
 
-        // Step 1: Waiting for Roll (Advance when phase becomes 'playing')
-        if (tutorialStep === 1 && phase === 'playing') {
+        // Step 1: Waiting for Game Mode Selection (Advance when phase becomes 'rolling' or 'playing')
+        if (tutorialStep === 1 && (phase === 'rolling' || phase === 'playing')) {
             setTutorialStep(2);
         }
 
-        // Step 2: Waiting for Draw (Advance when lines count increases)
-        if (tutorialStep === 2 && lines.length > 0) {
+        // Step 2: Waiting for Roll (Advance when phase becomes 'playing')
+        if (tutorialStep === 2 && phase === 'playing') {
             setTutorialStep(3);
+        }
+
+        // Step 3: Waiting for Draw (Advance when lines count increases)
+        if (tutorialStep === 3 && lines.length > 0) {
+            setTutorialStep(4);
         }
     }, [phase, lines.length, showTutorial, tutorialStep]);
 
@@ -173,9 +178,9 @@ export function Game() {
             setDiceValue(0);
         }
 
-        // Tutorial Progression: Advance from Step 2 (Draw) to Step 3 (Finish)
-        if (showTutorial && tutorialStep === 2) {
-            setTutorialStep(3);
+        // Tutorial Progression: Advance from Step 3 (Draw) to Step 4 (Finish)
+        if (showTutorial && tutorialStep === 3) {
+            setTutorialStep(4);
         }
     };
 
@@ -367,22 +372,30 @@ export function Game() {
                     )}
 
                     {tutorialStep === 1 && (
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-70 tutorial-tooltip right" style={{ marginLeft: '180px', marginTop: '-60px' }}>
+                            <h4 className="font-bold text-blue-400 mb-1">Step 1: Choose Mode</h4>
+                            <p className="text-sm">Select a game duration to start.</p>
+                            <div className="mt-2 text-xs text-slate-400 animate-pulse">Waiting for selection...</div>
+                        </div>
+                    )}
+
+                    {tutorialStep === 2 && (
                         <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-70 tutorial-tooltip top pointer-events-none">
-                            <h4 className="font-bold text-blue-400 mb-1">Step 1: Roll the Dice</h4>
+                            <h4 className="font-bold text-blue-400 mb-1">Step 2: Roll the Dice</h4>
                             <p className="text-sm">Click the button below to see how many moves you get.</p>
                             <div className="mt-2 text-xs text-slate-400 animate-pulse">Waiting for you to roll...</div>
                         </div>
                     )}
 
-                    {tutorialStep === 2 && (
+                    {tutorialStep === 3 && (
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-70 tutorial-tooltip pointer-events-none">
-                            <h4 className="font-bold text-blue-400 mb-1">Step 2: Draw a Line</h4>
+                            <h4 className="font-bold text-blue-400 mb-1">Step 3: Draw a Line</h4>
                             <p className="text-sm">Drag from one star to another to connect them.</p>
                             <div className="mt-2 text-xs text-slate-400 animate-pulse">Waiting for you to draw...</div>
                         </div>
                     )}
 
-                    {tutorialStep === 3 && (
+                    {tutorialStep === 4 && (
                         <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-70 tutorial-tooltip top pointer-events-auto">
                             <h4 className="font-bold text-blue-400 mb-1">Great Job!</h4>
                             <p className="text-sm mb-2">Form triangles to score points. Watch your moves counter!</p>

@@ -376,6 +376,22 @@ body {
   border-color: transparent transparent rgba(15, 23, 42, 0.9) transparent;
 }
 
+.tutorial-tooltip.right::after {
+  top: 50%;
+  left: -8px;
+  transform: translateY(-50%);
+  border-width: 8px 8px 8px 0;
+  border-color: transparent rgba(15, 23, 42, 0.9) transparent transparent;
+}
+
+.tutorial-tooltip.left::after {
+  top: 50%;
+  right: -8px;
+  transform: translateY(-50%);
+  border-width: 8px 0 8px 8px;
+  border-color: transparent transparent transparent rgba(15, 23, 42, 0.9);
+}
+
 .tutorial-highlight {
   position: relative;
   z-index: 65;
