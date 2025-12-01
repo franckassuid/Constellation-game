@@ -44,11 +44,24 @@ export function Game() {
         setPhase('menu');
         setShowTutorial(true);
         setTutorialStep(0);
+        // Reset tutorial seen status for testing/replay
+        localStorage.removeItem('constellation_tutorial_seen');
     };
 
     const startGame = (count) => {
         setPointCount(count);
         setPhase('setup');
+        setPoints([]);
+        setLines([]);
+        setScores({ 1: 0, 2: 0 });
+        setCurrentPlayer(1);
+        setMovesLeft(0);
+        setDiceValue(0);
+
+        // If tutorial is active, ensure we start clean
+        if (showTutorial) {
+            setTutorialStep(2); // Skip straight to roll if they clicked Quick Game
+        }
         // Trigger init via effect or direct call if container ready
         if (containerRef.current) {
             // We need to wait for render if we just switched from menu to setup (container might not be ready)
@@ -103,8 +116,8 @@ export function Game() {
             setTutorialStep(3);
         }
 
-        // Step 3: Waiting for Draw (Advance when lines count increases)
-        if (tutorialStep === 3 && lines.length > 0) {
+        // Step 3: Waiting for 3 Lines (Triangle)
+        if (tutorialStep === 3 && lines.length >= 3) {
             setTutorialStep(4);
         }
     }, [phase, lines.length, showTutorial, tutorialStep]);
@@ -113,14 +126,21 @@ export function Game() {
         if (isRolling) return;
         setIsRolling(true);
 
-        // Animation duration
-        setTimeout(() => {
-            const val = Math.ceil(Math.random() * 6);
-            setDiceValue(val);
-            setMovesLeft(val);
-            setPhase('playing');
-            setIsRolling(false);
-        }, 600);
+        // Tutorial Script: Always roll a 3
+        const newValue = showTutorial ? 3 : Math.floor(Math.random() * 6) + 1;
+
+        let counter = 0;
+        const interval = setInterval(() => {
+            setDiceValue(Math.floor(Math.random() * 6) + 1);
+            counter++;
+            if (counter > 10) {
+                clearInterval(interval);
+                setDiceValue(newValue);
+                setMovesLeft(newValue);
+                setPhase('playing');
+                setIsRolling(false);
+            }
+        }, 50);
     };
 
     const handleLineDraw = (p1, p2) => {
@@ -178,10 +198,7 @@ export function Game() {
             setDiceValue(0);
         }
 
-        // Tutorial Progression: Advance from Step 3 (Draw) to Step 4 (Finish)
-        if (showTutorial && tutorialStep === 3) {
-            setTutorialStep(4);
-        }
+        // Tutorial Progression: Handled in useEffect for line count
     };
 
     useEffect(() => {
@@ -390,17 +407,17 @@ export function Game() {
                     {tutorialStep === 3 && (
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-70 tutorial-tooltip pointer-events-none">
                             <h4 className="font-bold text-blue-400 mb-1">Step 3: You have {moves} Moves</h4>
-                            <p className="text-sm">Drag from one star to another to connect them. You can draw <strong>{moves} lines</strong> this turn.</p>
-                            <div className="mt-2 text-xs text-slate-400 animate-pulse">Waiting for you to draw...</div>
+                            <p className="text-sm">Draw <strong>3 lines</strong> to form a triangle and score points!</p>
+                            <div className="mt-2 text-xs text-slate-400 animate-pulse">Lines drawn: {lines.length}/3</div>
                         </div>
                     )}
 
                     {tutorialStep === 4 && (
                         <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-70 tutorial-tooltip top pointer-events-auto">
                             <h4 className="font-bold text-blue-400 mb-1">Great Job!</h4>
-                            <p className="text-sm mb-2">When your moves reach 0, it's Player 2's turn. Form triangles to score points!</p>
-                            <button onClick={completeTutorial} className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm w-full">
-                                Let's Play!
+                            <p className="text-sm mb-2">You scored points! Now you're ready to play for real.</p>
+                            <button onClick={replayTutorial} className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm w-full">
+                                Restart Game
                             </button>
                         </div>
                     )}
