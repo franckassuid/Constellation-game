@@ -89,6 +89,21 @@ export function Game() {
         return () => observer.disconnect();
     }, [points.length, phase]);
 
+    // Tutorial Progression Logic
+    useEffect(() => {
+        if (!showTutorial) return;
+
+        // Step 1: Waiting for Roll (Advance when phase becomes 'playing')
+        if (tutorialStep === 1 && phase === 'playing') {
+            setTutorialStep(2);
+        }
+
+        // Step 2: Waiting for Draw (Advance when lines count increases)
+        if (tutorialStep === 2 && lines.length > 0) {
+            setTutorialStep(3);
+        }
+    }, [phase, lines.length, showTutorial, tutorialStep]);
+
     const rollDice = () => {
         if (isRolling) return;
         setIsRolling(true);
@@ -156,6 +171,11 @@ export function Game() {
             setCurrentPlayer(currentPlayer === 1 ? 2 : 1);
             setPhase('rolling');
             setDiceValue(0);
+        }
+
+        // Tutorial Progression: Advance from Step 2 (Draw) to Step 3 (Finish)
+        if (showTutorial && tutorialStep === 2) {
+            setTutorialStep(3);
         }
     };
 
@@ -328,7 +348,8 @@ export function Game() {
             {/* Tutorial Overlay */}
             {showTutorial && (
                 <>
-                    <div className="tutorial-overlay" onClick={nextTutorialStep} />
+                    {/* Only show overlay backdrop for the Welcome step to focus attention */}
+                    {tutorialStep === 0 && <div className="tutorial-overlay" onClick={nextTutorialStep} />}
 
                     {tutorialStep === 0 && (
                         <div className="absolute inset-0 z-70 flex items-center justify-center pointer-events-none">
@@ -346,34 +367,28 @@ export function Game() {
                     )}
 
                     {tutorialStep === 1 && (
-                        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 z-70 tutorial-tooltip bottom">
-                            <h4 className="font-bold text-blue-400 mb-1">The Goal</h4>
-                            <p className="text-sm">Connect stars to form triangles. Each triangle you complete claims territory and scores points!</p>
-                            <button onClick={nextTutorialStep} className="mt-3 bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-sm w-full">Next</button>
+                        <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-70 tutorial-tooltip top pointer-events-none">
+                            <h4 className="font-bold text-blue-400 mb-1">Step 1: Roll the Dice</h4>
+                            <p className="text-sm">Click the button below to see how many moves you get.</p>
+                            <div className="mt-2 text-xs text-slate-400 animate-pulse">Waiting for you to roll...</div>
                         </div>
                     )}
 
                     {tutorialStep === 2 && (
-                        <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-70 tutorial-tooltip top">
-                            <h4 className="font-bold text-blue-400 mb-1">Rolling Dice</h4>
-                            <p className="text-sm">Roll the dice to determine how many lines you can draw this turn.</p>
-                            <button onClick={nextTutorialStep} className="mt-3 bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-sm w-full">Next</button>
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-70 tutorial-tooltip pointer-events-none">
+                            <h4 className="font-bold text-blue-400 mb-1">Step 2: Draw a Line</h4>
+                            <p className="text-sm">Drag from one star to another to connect them.</p>
+                            <div className="mt-2 text-xs text-slate-400 animate-pulse">Waiting for you to draw...</div>
                         </div>
                     )}
 
                     {tutorialStep === 3 && (
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-70 tutorial-tooltip">
-                            <h4 className="font-bold text-blue-400 mb-1">Drawing Lines</h4>
-                            <p className="text-sm">Drag your finger or mouse from one star to another to connect them. You can't cross existing lines!</p>
-                            <button onClick={nextTutorialStep} className="mt-3 bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-sm w-full">Next</button>
-                        </div>
-                    )}
-
-                    {tutorialStep === 4 && (
-                        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-70 tutorial-tooltip top">
-                            <h4 className="font-bold text-blue-400 mb-1">Strategy</h4>
-                            <p className="text-sm">Watch your moves counter. When it hits zero, it's the other player's turn. Good luck!</p>
-                            <button onClick={completeTutorial} className="mt-3 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm w-full">Play!</button>
+                        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-70 tutorial-tooltip top pointer-events-auto">
+                            <h4 className="font-bold text-blue-400 mb-1">Great Job!</h4>
+                            <p className="text-sm mb-2">Form triangles to score points. Watch your moves counter!</p>
+                            <button onClick={completeTutorial} className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm w-full">
+                                Let's Play!
+                            </button>
                         </div>
                     )}
                 </>
