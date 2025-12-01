@@ -381,16 +381,16 @@ export function Game() {
 
                     {tutorialStep === 2 && (
                         <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-70 tutorial-tooltip top pointer-events-none">
-                            <h4 className="font-bold text-blue-400 mb-1">Step 2: Roll the Dice</h4>
-                            <p className="text-sm">Click the button below to see how many moves you get.</p>
+                            <h4 className="font-bold text-blue-400 mb-1">Step 2: Player 1 Starts</h4>
+                            <p className="text-sm">Click the button below to roll the dice and see how many moves you get.</p>
                             <div className="mt-2 text-xs text-slate-400 animate-pulse">Waiting for you to roll...</div>
                         </div>
                     )}
 
                     {tutorialStep === 3 && (
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-70 tutorial-tooltip pointer-events-none">
-                            <h4 className="font-bold text-blue-400 mb-1">Step 3: Draw a Line</h4>
-                            <p className="text-sm">Drag from one star to another to connect them.</p>
+                            <h4 className="font-bold text-blue-400 mb-1">Step 3: You have {moves} Moves</h4>
+                            <p className="text-sm">Drag from one star to another to connect them. You can draw <strong>{moves} lines</strong> this turn.</p>
                             <div className="mt-2 text-xs text-slate-400 animate-pulse">Waiting for you to draw...</div>
                         </div>
                     )}
@@ -398,7 +398,7 @@ export function Game() {
                     {tutorialStep === 4 && (
                         <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-70 tutorial-tooltip top pointer-events-auto">
                             <h4 className="font-bold text-blue-400 mb-1">Great Job!</h4>
-                            <p className="text-sm mb-2">Form triangles to score points. Watch your moves counter!</p>
+                            <p className="text-sm mb-2">When your moves reach 0, it's Player 2's turn. Form triangles to score points!</p>
                             <button onClick={completeTutorial} className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm w-full">
                                 Let's Play!
                             </button>
