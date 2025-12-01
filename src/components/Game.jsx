@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Board } from './Board';
 import { generatePoints, doSegmentsIntersect, isPointOnSegment, findNewTriangles, hasValidMoves } from '../logic/geometry';
 import confetti from 'canvas-confetti';
-import { Dice1, Dice2, Dice3, Dice4, Dice5, Dice6, RefreshCw } from 'lucide-react';
+import { Dice1, Dice2, Dice3, Dice4, Dice5, Dice6, RefreshCw, HelpCircle } from 'lucide-react';
 
 export function Game() {
     const [points, setPoints] = useState([]);
@@ -15,7 +15,36 @@ export function Game() {
     const [scores, setScores] = useState({ 1: 0, 2: 0 });
     const [pointCount, setPointCount] = useState(30);
     const [isRolling, setIsRolling] = useState(false);
+    const [showTutorial, setShowTutorial] = useState(false);
+    const [tutorialStep, setTutorialStep] = useState(0);
     const containerRef = useRef(null);
+
+    useEffect(() => {
+        const tutorialSeen = localStorage.getItem('constellation_tutorial_seen');
+        if (!tutorialSeen) {
+            setShowTutorial(true);
+        }
+    }, []);
+
+    const nextTutorialStep = () => {
+        if (tutorialStep < 4) {
+            setTutorialStep(prev => prev + 1);
+        } else {
+            completeTutorial();
+        }
+    };
+
+    const completeTutorial = () => {
+        setShowTutorial(false);
+        setTutorialStep(0);
+        localStorage.setItem('constellation_tutorial_seen', 'true');
+    };
+
+    const replayTutorial = () => {
+        setPhase('menu');
+        setShowTutorial(true);
+        setTutorialStep(0);
+    };
 
     const startGame = (count) => {
         setPointCount(count);
@@ -166,6 +195,9 @@ export function Game() {
                     <button onClick={() => setPhase('menu')} className="restart-btn" title="Restart Game">
                         <RefreshCw size={14} />
                     </button>
+                    <button onClick={replayTutorial} className="restart-btn ml-2" title="Help / Tutorial">
+                        <HelpCircle size={14} />
+                    </button>
                 </div>
 
                 <div className={`player-score ${currentPlayer !== 2 ? 'inactive' : ''}`}>
@@ -293,6 +325,59 @@ export function Game() {
                     )}
                 </div>
             </div>
+            {/* Tutorial Overlay */}
+            {showTutorial && (
+                <>
+                    <div className="tutorial-overlay" onClick={nextTutorialStep} />
+
+                    {tutorialStep === 0 && (
+                        <div className="absolute inset-0 z-70 flex items-center justify-center pointer-events-none">
+                            <div className="bg-slate-900/90 border border-slate-700 p-6 rounded-2xl max-w-sm text-center shadow-2xl pointer-events-auto animate-in fade-in zoom-in duration-300">
+                                <h3 className="text-xl font-bold text-white mb-2">Welcome to Constellation!</h3>
+                                <p className="text-slate-300 mb-4">A strategic game of connecting stars and claiming territory.</p>
+                                <button onClick={nextTutorialStep} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold w-full">
+                                    Start Tutorial
+                                </button>
+                                <button onClick={completeTutorial} className="mt-2 text-slate-500 text-sm hover:text-slate-300">
+                                    Skip
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {tutorialStep === 1 && (
+                        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 z-70 tutorial-tooltip bottom">
+                            <h4 className="font-bold text-blue-400 mb-1">The Goal</h4>
+                            <p className="text-sm">Connect stars to form triangles. Each triangle you complete claims territory and scores points!</p>
+                            <button onClick={nextTutorialStep} className="mt-3 bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-sm w-full">Next</button>
+                        </div>
+                    )}
+
+                    {tutorialStep === 2 && (
+                        <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-70 tutorial-tooltip top">
+                            <h4 className="font-bold text-blue-400 mb-1">Rolling Dice</h4>
+                            <p className="text-sm">Roll the dice to determine how many lines you can draw this turn.</p>
+                            <button onClick={nextTutorialStep} className="mt-3 bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-sm w-full">Next</button>
+                        </div>
+                    )}
+
+                    {tutorialStep === 3 && (
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-70 tutorial-tooltip">
+                            <h4 className="font-bold text-blue-400 mb-1">Drawing Lines</h4>
+                            <p className="text-sm">Drag your finger or mouse from one star to another to connect them. You can't cross existing lines!</p>
+                            <button onClick={nextTutorialStep} className="mt-3 bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-sm w-full">Next</button>
+                        </div>
+                    )}
+
+                    {tutorialStep === 4 && (
+                        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-70 tutorial-tooltip top">
+                            <h4 className="font-bold text-blue-400 mb-1">Strategy</h4>
+                            <p className="text-sm">Watch your moves counter. When it hits zero, it's the other player's turn. Good luck!</p>
+                            <button onClick={completeTutorial} className="mt-3 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm w-full">Play!</button>
+                        </div>
+                    )}
+                </>
+            )}
         </div>
     );
 }

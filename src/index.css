@@ -328,3 +328,69 @@ body {
     opacity: 0.2;
   }
 }
+
+/* Tutorial Styles */
+.tutorial-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  background: rgba(2, 6, 23, 0.7);
+  backdrop-filter: blur(2px);
+  pointer-events: auto;
+}
+
+.tutorial-tooltip {
+  position: absolute;
+  z-index: 70;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  color: #f8fafc;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+  max-width: 300px;
+  animation: float 3s ease-in-out infinite;
+}
+
+.tutorial-tooltip::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+
+.tutorial-tooltip.top::after {
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 8px 8px 0 8px;
+  border-color: rgba(15, 23, 42, 0.9) transparent transparent transparent;
+}
+
+.tutorial-tooltip.bottom::after {
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 0 8px 8px 8px;
+  border-color: transparent transparent rgba(15, 23, 42, 0.9) transparent;
+}
+
+.tutorial-highlight {
+  position: relative;
+  z-index: 65;
+  box-shadow: 0 0 0 9999px rgba(2, 6, 23, 0.7);
+  border-radius: 8px;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
