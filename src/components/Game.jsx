@@ -161,7 +161,7 @@ export function Game() {
                 </div>
 
                 <div className="game-title">
-                    <img src="/logo.png" alt="Constellation Logo" className="w-8 h-8 mb-1 object-contain" style={{ width: '2rem', height: '2rem' }} />
+                    <img src="logo.png" alt="Constellation Logo" className="w-8 h-8 mb-1 object-contain" style={{ width: '2rem', height: '2rem' }} />
                     <div className="title-text">CONSTELLATION</div>
                     <button onClick={() => setPhase('menu')} className="restart-btn" title="Restart Game">
                         <RefreshCw size={14} />
@@ -177,7 +177,7 @@ export function Game() {
             {/* Menu Overlay */}
             {phase === 'menu' && (
                 <div className="absolute inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-8 animate-in fade-in duration-500">
-                    <img src="/logo.png" alt="Constellation Logo" className="w-24 h-24 mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" style={{ width: '6rem', height: '6rem' }} />
+                    <img src="logo.png" alt="Constellation Logo" className="w-24 h-24 mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" style={{ width: '6rem', height: '6rem' }} />
                     <h1 className="text-5xl font-black text-white mb-2 tracking-tighter drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">CONSTELLATION</h1>
                     <p className="text-slate-400 mb-12 font-medium text-lg tracking-wide uppercase">Connect the stars. Claim the sky.</p>
 
