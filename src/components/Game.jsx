@@ -433,7 +433,10 @@ export function Game() {
                     )}
 
                     {tutorialStep === 1 && (
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-70 tutorial-tooltip" style={{ marginLeft: '250px', marginTop: '-80px' }}>
+                        <div className="absolute z-70 tutorial-tooltip 
+                            top-[15%] left-1/2 -translate-x-1/2 
+                            md:top-1/2 md:left-1/2 md:-translate-y-1/2 md:translate-x-[180px] md:ml-0
+                            w-64 text-center pointer-events-none">
                             <h4 className="font-bold text-blue-400 mb-1">Step 1: Choose Mode</h4>
                             <p className="text-sm">Select a game duration to start.</p>
                             <div className="mt-2 text-xs text-slate-400 animate-pulse">Waiting for selection...</div>
