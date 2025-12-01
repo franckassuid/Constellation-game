@@ -43,7 +43,7 @@ export function doSegmentsIntersect(p1, p2, p3, p4) {
 }
 
 // Check if a point p lies on segment (a, b)
-export function isPointOnSegment(p, a, b, tolerance = 1) {
+export function isPointOnSegment(p, a, b, tolerance = 10) {
     // If p is one of the endpoints, it's not "on the segment" in a blocking way for this game's logic
     // (we want to prevent passing THROUGH a point)
     if (p.id === a.id || p.id === b.id) return false;
