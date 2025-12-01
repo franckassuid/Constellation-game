@@ -48,6 +48,11 @@ export function Game() {
         localStorage.removeItem('constellation_tutorial_seen');
     };
 
+    const finishAndRestart = () => {
+        completeTutorial();
+        setPhase('menu');
+    };
+
     const startGame = (count) => {
         setPointCount(count);
         setPhase('setup');
@@ -75,13 +80,34 @@ export function Game() {
         if (containerRef.current) {
             const { width, height } = containerRef.current.getBoundingClientRect();
             if (width > 0 && height > 0) {
-                setPoints(generatePoints(pointCount, width, height));
                 setLines([]);
                 setTriangles([]);
                 setScores({ 1: 0, 2: 0 });
                 setCurrentPlayer(1);
                 setPhase('rolling');
                 setMovesLeft(0);
+                setDiceValue(0);
+
+                // Tutorial: Only 3 points in a triangle
+                if (showTutorial) {
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    // Reduce radius slightly and move up to ensure bottom line is visible
+                    const radius = Math.min(width, height) * 0.22;
+                    const offsetY = -radius * 0.2; // Move up slightly
+
+                    // Fixed triangle points
+                    const tutorialPoints = [
+                        { id: 1, x: centerX, y: centerY + offsetY - radius }, // Top
+                        { id: 2, x: centerX - radius * 0.866, y: centerY + offsetY + radius * 0.5 }, // Bottom Left
+                        { id: 3, x: centerX + radius * 0.866, y: centerY + offsetY + radius * 0.5 }  // Bottom Right
+                    ];
+
+                    setPoints(tutorialPoints);
+                } else {
+                    const newPoints = generatePoints(pointCount, width, height);
+                    setPoints(newPoints);
+                }
             }
         }
     };
@@ -146,17 +172,10 @@ export function Game() {
     const handleLineDraw = (p1, p2) => {
         if (movesLeft <= 0) return;
 
-        // Tutorial Strict Enforcement
-        if (showTutorial) {
-            // We want to force a triangle between the first 3 points (indices 0, 1, 2)
-            // Assuming points are generated in a stable way or we just pick the first 3 available.
-            // Let's use the IDs of the first 3 points in the `points` array.
-            const validIds = [points[0].id, points[1].id, points[2].id];
-
-            // Check if both points are in our valid set
-            if (!validIds.includes(p1.id) || !validIds.includes(p2.id)) {
-                return; // Block invalid moves
-            }
+        // Tutorial: Simple check, just ensure they are drawing
+        if (showTutorial && tutorialStep === 3) {
+            // Allow any connection between the 3 points (since there are only 3)
+            // We don't enforce any order here.
         }
 
         if (lines.some(l => (l.p1.id === p1.id && l.p2.id === p2.id) || (l.p1.id === p2.id && l.p2.id === p1.id))) {
@@ -181,7 +200,7 @@ export function Game() {
         const newLines = [...lines, newLine];
         setLines(newLines);
 
-        const newTriangles = findNewTriangles(p1, p2, lines);
+        const newTriangles = findNewTriangles(p1, p2, newLines);
         let pointsGained = 0;
         if (newTriangles.length > 0) {
             const addedTriangles = newTriangles.map(t => ({
@@ -345,7 +364,7 @@ export function Game() {
             )}
 
             {/* Game Board */}
-            <div className="board-wrapper" ref={containerRef}>
+            <div className="board-wrapper overflow-visible" ref={containerRef}>
                 {phase !== 'menu' && (
                     <Board
                         points={points}
@@ -371,17 +390,19 @@ export function Game() {
                             {isRolling ? 'Rolling...' : 'Roll Dice'}
                         </button>
                     )}
-
                     {phase === 'playing' && (
-                        <div className="moves-display">
-                            <div className="moves-label">
-                                Moves Remaining
+                        <div className="moves-display flex items-center gap-4 bg-slate-800/80 px-6 py-3 rounded-xl border border-slate-700 backdrop-blur-sm shadow-lg">
+                            <div className="flex items-center gap-3">
+                                <DiceIcon size={48} className="text-blue-400 animate-pulse drop-shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                                <div className="text-lg font-bold text-white">
+                                    Moves Remaining
+                                </div>
                             </div>
-                            <div className="moves-dots">
+                            <div className="flex gap-1">
                                 {[...Array(movesLeft)].map((_, i) => (
                                     <div
                                         key={i}
-                                        className={`move-dot ${currentPlayer === 1 ? 'bg-p1' : 'bg-p2'}`}
+                                        className={`w-3 h-3 rounded-full ${currentPlayer === 1 ? 'bg-blue-500' : 'bg-pink-500'}`}
                                         style={{ animationDelay: `${i * 100}ms` }}
                                     />
                                 ))}
@@ -412,7 +433,7 @@ export function Game() {
                     )}
 
                     {tutorialStep === 1 && (
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-70 tutorial-tooltip right" style={{ marginLeft: '220px', marginTop: '-60px' }}>
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-70 tutorial-tooltip" style={{ marginLeft: '250px', marginTop: '-80px' }}>
                             <h4 className="font-bold text-blue-400 mb-1">Step 1: Choose Mode</h4>
                             <p className="text-sm">Select a game duration to start.</p>
                             <div className="mt-2 text-xs text-slate-400 animate-pulse">Waiting for selection...</div>
@@ -420,21 +441,23 @@ export function Game() {
                     )}
 
                     {tutorialStep === 2 && (
-                        <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-70 tutorial-tooltip top pointer-events-none">
+                        <div className="absolute bottom-40 left-1/2 -translate-x-1/2 z-70 tutorial-tooltip top pointer-events-none">
                             <h4 className="font-bold text-blue-400 mb-1">Step 2: Player 1 Starts</h4>
-                            <p className="text-sm">Click the button below to roll the dice and see how many moves you get.</p>
+                            <p className="text-sm">Click the button below to roll the dice.</p>
                             <div className="mt-2 text-xs text-slate-400 animate-pulse">Waiting for you to roll...</div>
                         </div>
                     )}
 
                     {tutorialStep === 3 && (
                         <>
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-70 tutorial-tooltip pointer-events-none">
+                            <div className="absolute top-24 left-1/2 -translate-x-1/2 z-70 tutorial-tooltip pointer-events-none">
                                 <h4 className="font-bold text-blue-400 mb-1">Step 3: You have {movesLeft} Moves</h4>
-                                <p className="text-sm">Draw <strong>3 lines</strong> to form a triangle and score points!</p>
+                                <p className="text-sm">Connect the <strong>3 stars</strong> to form a triangle!</p>
                                 <div className="mt-2 text-xs text-slate-400 animate-pulse">Triangles formed: {triangles.length}</div>
                             </div>
-                            <div className="gesture-hand"></div>
+
+
+                            {/* Highlights removed as requested */}
                         </>
                     )}
 
@@ -442,7 +465,7 @@ export function Game() {
                         <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-70 tutorial-tooltip top pointer-events-auto">
                             <h4 className="font-bold text-blue-400 mb-1">Great Job!</h4>
                             <p className="text-sm mb-2">You scored points! Now you're ready to play for real.</p>
-                            <button onClick={replayTutorial} className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm w-full">
+                            <button onClick={finishAndRestart} className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm w-full">
                                 Restart Game
                             </button>
                         </div>

@@ -90,17 +90,30 @@ export function Board({ points, lines, triangles, onLineDraw, interactive, curre
                     />
                 ))}
 
-                {/* Lines */}
+                {/* Lines - Glow Layer */}
                 {lines.map((l, i) => (
                     <line
-                        key={`line-${i}`}
+                        key={`line-glow-${i}`}
                         x1={l.p1.x} y1={l.p1.y}
                         x2={l.p2.x} y2={l.p2.y}
                         stroke={l.owner === 1 ? '#60a5fa' : '#f472b6'}
-                        strokeWidth="3"
+                        strokeWidth="6"
                         strokeLinecap="round"
                         filter="url(#glow)"
-                        style={{ opacity: 0.8 }}
+                        style={{ opacity: 0.4 }}
+                    />
+                ))}
+
+                {/* Lines - Core Layer */}
+                {lines.map((l, i) => (
+                    <line
+                        key={`line-core-${i}`}
+                        x1={l.p1.x} y1={l.p1.y}
+                        x2={l.p2.x} y2={l.p2.y}
+                        stroke={l.owner === 1 ? '#93c5fd' : '#f9a8d4'} // Lighter core
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        style={{ opacity: 1 }}
                     />
                 ))}
 
