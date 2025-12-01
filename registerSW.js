@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/Constellation-game/sw.js', { scope: '/Constellation-game/' })})}
