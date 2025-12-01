@@ -104,38 +104,38 @@ export function findNewTriangles(p1, p2, existingLines) {
     return triangles;
 }
 
+export function isValidMove(p1, p2, points, lines) {
+    // Check if line already exists
+    if (lines.some(l => (l.p1.id === p1.id && l.p2.id === p2.id) || (l.p1.id === p2.id && l.p2.id === p1.id))) {
+        return false;
+    }
+
+    // Check intersections
+    for (const l of lines) {
+        if (doSegmentsIntersect(p1, p2, l.p1, l.p2)) {
+            return false;
+        }
+    }
+
+    // Check if point on segment
+    for (const p of points) {
+        if (isPointOnSegment(p, p1, p2)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 export function hasValidMoves(points, lines) {
     for (let i = 0; i < points.length; i++) {
         for (let j = i + 1; j < points.length; j++) {
             const p1 = points[i];
             const p2 = points[j];
 
-            // Check if line already exists
-            if (lines.some(l => (l.p1.id === p1.id && l.p2.id === p2.id) || (l.p1.id === p2.id && l.p2.id === p1.id))) {
-                continue;
+            if (isValidMove(p1, p2, points, lines)) {
+                return true; // Found at least one valid move
             }
-
-            // Check intersections
-            let intersects = false;
-            for (const l of lines) {
-                if (doSegmentsIntersect(p1, p2, l.p1, l.p2)) {
-                    intersects = true;
-                    break;
-                }
-            }
-            if (intersects) continue;
-
-            // Check if point on segment
-            let pointOnSegment = false;
-            for (const p of points) {
-                if (isPointOnSegment(p, p1, p2)) {
-                    pointOnSegment = true;
-                    break;
-                }
-            }
-            if (pointOnSegment) continue;
-
-            return true; // Found at least one valid move
         }
     }
     return false;

@@ -1,4 +1,4 @@
-import { doSegmentsIntersect, isPointOnSegment, findNewTriangles } from './geometry';
+import { findNewTriangles, isValidMove } from './geometry';
 
 export function getAiMove(points, lines, movesLeft, difficulty) {
     const validMoves = getAllValidMoves(points, lines);
@@ -100,25 +100,4 @@ function getAllValidMoves(points, lines) {
     return moves;
 }
 
-function isValidMove(p1, p2, points, lines) {
-    // Check if line already exists
-    if (lines.some(l => (l.p1.id === p1.id && l.p2.id === p2.id) || (l.p1.id === p2.id && l.p2.id === p1.id))) {
-        return false;
-    }
 
-    // Check intersections
-    for (const l of lines) {
-        if (doSegmentsIntersect(p1, p2, l.p1, l.p2)) {
-            return false;
-        }
-    }
-
-    // Check if point on segment
-    for (const p of points) {
-        if (isPointOnSegment(p, p1, p2)) {
-            return false;
-        }
-    }
-
-    return true;
-}

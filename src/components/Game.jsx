@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Board } from './Board';
-import { generatePoints, doSegmentsIntersect, isPointOnSegment, findNewTriangles, hasValidMoves } from '../logic/geometry';
+import { generatePoints, doSegmentsIntersect, isPointOnSegment, findNewTriangles, hasValidMoves, isValidMove } from '../logic/geometry';
 import { getAiMove } from '../logic/ai';
 import confetti from 'canvas-confetti';
 import { Dice1, Dice2, Dice3, Dice4, Dice5, Dice6, RefreshCw, HelpCircle, User, Cpu, Users } from 'lucide-react';
@@ -194,7 +194,7 @@ export function Game() {
     };
 
     const handleLineDraw = (p1, p2) => {
-        if (movesLeft <= 0) return;
+        if (movesLeft <= 0) return false;
 
         // Tutorial: Simple check, just ensure they are drawing
         if (showTutorial && tutorialStep === 3) {
@@ -202,22 +202,10 @@ export function Game() {
             // We don't enforce any order here.
         }
 
-        if (lines.some(l => (l.p1.id === p1.id && l.p2.id === p2.id) || (l.p1.id === p2.id && l.p2.id === p1.id))) {
-            return;
-        }
-
-        for (const l of lines) {
-            if (doSegmentsIntersect(p1, p2, l.p1, l.p2)) {
-                if (navigator.vibrate) navigator.vibrate(200);
-                return;
-            }
-        }
-
-        for (const p of points) {
-            if (isPointOnSegment(p, p1, p2)) {
-                if (navigator.vibrate) navigator.vibrate(200);
-                return;
-            }
+        // Use shared validation logic
+        if (!isValidMove(p1, p2, points, lines)) {
+            if (navigator.vibrate) navigator.vibrate(200);
+            return false;
         }
 
         const newLine = { p1, p2, owner: currentPlayer };
@@ -254,18 +242,17 @@ export function Game() {
             setDiceValue(0);
         }
 
-        // Tutorial Progression: Handled in useEffect for line count
+        return true; // Success
     };
 
+    // Check for game over after lines update
     useEffect(() => {
-        if (phase === 'playing' && movesLeft > 0) {
-            // Check if any move is possible for current player?
-            // Actually, we should check if ANY move is possible on the board.
-            // If not, game over.
-            // But checking every render might be expensive?
-            // We only need to check after a line is added.
+        if (phase === 'playing' || phase === 'rolling') {
+            if (points.length > 0 && !hasValidMoves(points, lines)) {
+                setPhase('gameover');
+            }
         }
-    }, [lines, phase]);
+    }, [lines, points, phase]);
 
     // AI Turn Logic
     useEffect(() => {
@@ -281,11 +268,15 @@ export function Game() {
             // AI Move
             const timer = setTimeout(() => {
                 const move = getAiMove(points, lines, movesLeft, difficulty);
+                let success = false;
                 if (move) {
-                    handleLineDraw(move.p1, move.p2);
-                } else {
-                    // No valid moves, but we have moves left? Should not happen if game over check works.
-                    // But if it does, skip turn to prevent infinite loop
+                    success = handleLineDraw(move.p1, move.p2);
+                }
+
+                if (!success) {
+                    // If AI failed to move (no valid moves or validation error), skip turn
+                    // This prevents infinite loops if AI thinks it has a move but validation rejects it
+                    console.warn("AI failed to move or validation mismatch. Skipping turn.");
                     setMovesLeft(0);
                     setCurrentPlayer(1);
                     setPhase('rolling');
