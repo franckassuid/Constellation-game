@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Board } from './Board';
 import { generatePoints, doSegmentsIntersect, isPointOnSegment, findNewTriangles, hasValidMoves } from '../logic/geometry';
+import { getAiMove } from '../logic/ai';
 import confetti from 'canvas-confetti';
-import { Dice1, Dice2, Dice3, Dice4, Dice5, Dice6, RefreshCw, HelpCircle } from 'lucide-react';
+import { Dice1, Dice2, Dice3, Dice4, Dice5, Dice6, RefreshCw, HelpCircle, User, Cpu, Users } from 'lucide-react';
 
 export function Game() {
     const [points, setPoints] = useState([]);
@@ -11,12 +12,14 @@ export function Game() {
     const [currentPlayer, setCurrentPlayer] = useState(1);
     const [movesLeft, setMovesLeft] = useState(0);
     const [diceValue, setDiceValue] = useState(0);
-    const [phase, setPhase] = useState('menu'); // menu, setup, rolling, playing, gameover
+    const [phase, setPhase] = useState('menu'); // menu, mode-select, difficulty-select, setup, rolling, playing, gameover
     const [scores, setScores] = useState({ 1: 0, 2: 0 });
     const [pointCount, setPointCount] = useState(30);
     const [isRolling, setIsRolling] = useState(false);
     const [showTutorial, setShowTutorial] = useState(false);
     const [tutorialStep, setTutorialStep] = useState(0);
+    const [gameMode, setGameMode] = useState('pvp'); // 'pvp', 'pve'
+    const [difficulty, setDifficulty] = useState('easy'); // 'easy', 'medium', 'hard'
     const containerRef = useRef(null);
 
     useEffect(() => {
@@ -53,8 +56,29 @@ export function Game() {
         setPhase('menu');
     };
 
-    const startGame = (count) => {
+    const handleGameStartRequest = (count) => {
         setPointCount(count);
+        setPhase('mode-select');
+    };
+
+    const selectMode = (mode) => {
+        setGameMode(mode);
+        if (mode === 'pve') {
+            setPhase('difficulty-select');
+        } else {
+            startGame(pointCount, 'pvp');
+        }
+    };
+
+    const selectDifficulty = (diff) => {
+        setDifficulty(diff);
+        startGame(pointCount, 'pve', diff);
+    };
+
+    const startGame = (count, mode = 'pvp', diff = 'easy') => {
+        setPointCount(count);
+        setGameMode(mode);
+        setDifficulty(diff);
         setPhase('setup');
         setPoints([]);
         setLines([]);
@@ -243,14 +267,33 @@ export function Game() {
         }
     }, [lines, phase]);
 
-    // Check for game over after lines update
+    // AI Turn Logic
     useEffect(() => {
-        if (phase === 'playing' || phase === 'rolling') {
-            if (points.length > 0 && !hasValidMoves(points, lines)) {
-                setPhase('gameover');
-            }
+        if (phase === 'rolling' && currentPlayer === 2 && gameMode === 'pve') {
+            // AI Roll
+            const timer = setTimeout(() => {
+                rollDice();
+            }, 1000);
+            return () => clearTimeout(timer);
         }
-    }, [lines, points, phase]);
+
+        if (phase === 'playing' && currentPlayer === 2 && gameMode === 'pve' && movesLeft > 0) {
+            // AI Move
+            const timer = setTimeout(() => {
+                const move = getAiMove(points, lines, movesLeft, difficulty);
+                if (move) {
+                    handleLineDraw(move.p1, move.p2);
+                } else {
+                    // No valid moves, but we have moves left? Should not happen if game over check works.
+                    // But if it does, skip turn to prevent infinite loop
+                    setMovesLeft(0);
+                    setCurrentPlayer(1);
+                    setPhase('rolling');
+                }
+            }, 1000); // Delay for "thinking"
+            return () => clearTimeout(timer);
+        }
+    }, [phase, currentPlayer, gameMode, movesLeft, points, lines, difficulty]);
 
     const DiceIcon = [Dice1, Dice1, Dice2, Dice3, Dice4, Dice5, Dice6][diceValue] || Dice5;
 
@@ -259,7 +302,9 @@ export function Game() {
             {/* Header */}
             <div className="header">
                 <div className={`player-score flex flex-col items-center ${currentPlayer !== 1 ? 'inactive opacity-50' : ''}`}>
-                    <div className="player-label text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Player 1</div>
+                    <div className="player-label text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1">
+                        <User size={12} /> Player 1
+                    </div>
                     <div key={scores[1]} className={`score-value p1 text-4xl font-black text-blue-400 ${scores[1] > 0 ? 'score-animate' : ''}`}>{scores[1]}</div>
                 </div>
 
@@ -275,7 +320,10 @@ export function Game() {
                 </div>
 
                 <div className={`player-score flex flex-col items-center ${currentPlayer !== 2 ? 'inactive opacity-50' : ''}`}>
-                    <div className="player-label text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Player 2</div>
+                    <div className="player-label text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1">
+                        {gameMode === 'pve' ? <Cpu size={12} /> : <User size={12} />}
+                        {gameMode === 'pve' ? `CPU (${difficulty})` : 'Player 2'}
+                    </div>
                     <div key={scores[2]} className={`score-value p2 text-4xl font-black text-rose-400 ${scores[2] > 0 ? 'score-animate' : ''}`}>{scores[2]}</div>
                 </div>
             </div>
@@ -289,7 +337,7 @@ export function Game() {
 
                     <div className="flex flex-col gap-4 w-full max-w-xs">
                         <button
-                            onClick={() => startGame(15)}
+                            onClick={() => handleGameStartRequest(15)}
                             className="menu-btn bg-emerald-500/20 border-emerald-500/50 hover:bg-emerald-500/30 text-emerald-100"
                         >
                             <div className="flex justify-between items-center w-full">
@@ -299,7 +347,7 @@ export function Game() {
                         </button>
 
                         <button
-                            onClick={() => startGame(25)}
+                            onClick={() => handleGameStartRequest(25)}
                             className="menu-btn bg-blue-500/20 border-blue-500/50 hover:bg-blue-500/30 text-blue-100"
                         >
                             <div className="flex justify-between items-center w-full">
@@ -309,7 +357,7 @@ export function Game() {
                         </button>
 
                         <button
-                            onClick={() => startGame(35)}
+                            onClick={() => handleGameStartRequest(35)}
                             className="menu-btn bg-purple-500/20 border-purple-500/50 hover:bg-purple-500/30 text-purple-100"
                         >
                             <div className="flex justify-between items-center w-full">
@@ -327,6 +375,68 @@ export function Game() {
                                 <span>View Tutorial</span>
                             </div>
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Mode Selection Overlay */}
+            {phase === 'mode-select' && (
+                <div className="absolute inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-8 animate-in fade-in duration-300">
+                    <h2 className="text-3xl font-bold text-white mb-8">Select Mode</h2>
+                    <div className="flex flex-col gap-4 w-full max-w-xs">
+                        <button
+                            onClick={() => selectMode('pve')}
+                            className="menu-btn bg-indigo-500/20 border-indigo-500/50 hover:bg-indigo-500/30 text-indigo-100"
+                        >
+                            <div className="flex items-center gap-3">
+                                <User size={20} />
+                                <div className="flex flex-col items-start">
+                                    <span className="font-bold">1 Player</span>
+                                    <span className="text-xs opacity-70">vs Computer</span>
+                                </div>
+                            </div>
+                        </button>
+                        <button
+                            onClick={() => selectMode('pvp')}
+                            className="menu-btn bg-orange-500/20 border-orange-500/50 hover:bg-orange-500/30 text-orange-100"
+                        >
+                            <div className="flex items-center gap-3">
+                                <Users size={20} />
+                                <div className="flex flex-col items-start">
+                                    <span className="font-bold">2 Players</span>
+                                    <span className="text-xs opacity-70">Local Multiplayer</span>
+                                </div>
+                            </div>
+                        </button>
+                        <button onClick={() => setPhase('menu')} className="mt-4 text-slate-400 hover:text-white">Back</button>
+                    </div>
+                </div>
+            )}
+
+            {/* Difficulty Selection Overlay */}
+            {phase === 'difficulty-select' && (
+                <div className="absolute inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-8 animate-in fade-in duration-300">
+                    <h2 className="text-3xl font-bold text-white mb-8">Select Difficulty</h2>
+                    <div className="flex flex-col gap-4 w-full max-w-xs">
+                        <button
+                            onClick={() => selectDifficulty('easy')}
+                            className="menu-btn bg-green-500/20 border-green-500/50 hover:bg-green-500/30 text-green-100"
+                        >
+                            <span className="font-bold">Easy</span>
+                        </button>
+                        <button
+                            onClick={() => selectDifficulty('medium')}
+                            className="menu-btn bg-yellow-500/20 border-yellow-500/50 hover:bg-yellow-500/30 text-yellow-100"
+                        >
+                            <span className="font-bold">Medium</span>
+                        </button>
+                        <button
+                            onClick={() => selectDifficulty('hard')}
+                            className="menu-btn bg-red-500/20 border-red-500/50 hover:bg-red-500/30 text-red-100"
+                        >
+                            <span className="font-bold">Hard</span>
+                        </button>
+                        <button onClick={() => setPhase('mode-select')} className="mt-4 text-slate-400 hover:text-white">Back</button>
                     </div>
                 </div>
             )}
@@ -371,7 +481,7 @@ export function Game() {
                         lines={lines}
                         triangles={triangles}
                         onLineDraw={handleLineDraw}
-                        interactive={phase === 'playing'}
+                        interactive={phase === 'playing' && (gameMode === 'pvp' || currentPlayer === 1)}
                         currentPlayer={currentPlayer}
                     />
                 )}
