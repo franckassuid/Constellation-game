@@ -137,7 +137,7 @@ export function Game() {
     };
 
     useEffect(() => {
-        if (!containerRef.current || phase === 'menu') return;
+        if (!containerRef.current || phase !== 'setup') return;
 
         const observer = new ResizeObserver((entries) => {
             for (const entry of entries) {
@@ -274,12 +274,15 @@ export function Game() {
                 }
 
                 if (!success) {
-                    // If AI failed to move (no valid moves or validation error), skip turn
-                    // This prevents infinite loops if AI thinks it has a move but validation rejects it
-                    console.warn("AI failed to move or validation mismatch. Skipping turn.");
-                    setMovesLeft(0);
-                    setCurrentPlayer(1);
-                    setPhase('rolling');
+                    // If AI failed to move (no valid moves or validation error)
+                    if (!hasValidMoves(points, lines)) {
+                        setPhase('gameover');
+                    } else {
+                        console.warn("AI failed to move or validation mismatch. Skipping turn.");
+                        setMovesLeft(0);
+                        setCurrentPlayer(1);
+                        setPhase('rolling');
+                    }
                 }
             }, 1000); // Delay for "thinking"
             return () => clearTimeout(timer);
@@ -538,8 +541,16 @@ export function Game() {
                             top-[15%] left-1/2 -translate-x-1/2 
                             md:top-1/2 md:left-1/2 md:-translate-y-1/2 md:translate-x-[180px] md:ml-0
                             w-64 text-center pointer-events-none">
-                            <h4 className="font-bold text-blue-400 mb-1">Step 1: Choose Mode</h4>
-                            <p className="text-sm">Select a game duration to start.</p>
+                            <h4 className="font-bold text-blue-400 mb-1">
+                                {phase === 'menu' ? 'Step 1: Choose Duration' :
+                                    phase === 'mode-select' ? 'Step 2: Choose Opponent' :
+                                        phase === 'difficulty-select' ? 'Step 3: Choose Difficulty' : 'Setup'}
+                            </h4>
+                            <p className="text-sm">
+                                {phase === 'menu' ? 'Select a game duration to start.' :
+                                    phase === 'mode-select' ? 'Select 1 Player to play vs AI or 2 Players for local.' :
+                                        phase === 'difficulty-select' ? 'Select the AI difficulty level.' : 'Preparing game...'}
+                            </p>
                             <div className="mt-2 text-xs text-slate-400 animate-pulse">Waiting for selection...</div>
                         </div>
                     )}
